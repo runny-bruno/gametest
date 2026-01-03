@@ -1,0 +1,26 @@
+void mainmenu()
+{
+setmenu(true);
+m.add_item("Start game","play");
+m.add_item("Exit","exit");
+string res=m.run("main menu. Use arrows to move through items and press enter to select.");
+if (res=="play")
+{
+m.fade_music(25);
+game();
+}
+else
+{
+m.fade_music(25);
+exit();
+}
+}
+void setmenu(bool mainmenu=false)
+{
+m.reset(false);
+m.click_sound="menuclick.ogg";
+m.enter_sound="menuenter.ogg";
+m.open_sound="menuopen.ogg";
+if (mainmenu)
+m.add_music("menumusic.wav",-15);
+}

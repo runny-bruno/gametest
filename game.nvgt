@@ -1,0 +1,167 @@
+#pragma namespace sound upcoming
+#pragma plugin legacy_sound
+#pragma embed "sounds.dat"
+#include "speech.nvgt"
+#include "includes/weapons.nvgt"
+#include "includes/dlgplayer.nvgt"
+#include "includes/menu.nvgt"
+#include "legacy_sound_pool.nvgt"
+#include "includes/enemies.nvgt"
+#include "includes/basic_menu.nvgt"
+bool hrtf=true;
+bool y_is_elevation=true;
+menu m;
+bool debug = false;
+bool jumping = false, landed = true;
+int health = 1000;
+sound_pool p, p2;
+int walktime = 200;
+int speedtime = 100;
+timer jumptimer, walktimer, spawntimer;
+int jumptime = 125;
+int spawntime = 2000;
+vector me();
+sound amb;
+void main()
+{
+pack myp;
+myp.open("*", PACK_OPEN_MODE_READ);
+@sound_default_pack=myp;
+show_window("Forest island");
+dlgplay("logo.wav", true, 30);
+mainmenu();
+}
+void game()
+{
+load_weapons();
+amb.load("forest.ogg");
+amb.play_looped();
+while(true)
+{
+p.update_listener_2d(me.x, me.y);
+p2.update_listener_2d(me.x, me.y);
+enemy_loop();
+weapon_loop();
+wait(5);
+if(spawntimer.elapsed>=spawntime and enemies.length()<1)
+{
+spawn_enemy(random(0, 100), 0, "bear", 100, 800, random(30,90), 1000);
+spawntimer.restart();
+}
+if(key_down(KEY_LEFT) and walktimer.elapsed>=walktime and me.x>0)
+{
+walktimer.restart();
+me.x--;
+player_facing=-1;
+if(me.y == 0)
+{
+p.play_stationary("shortgrassstep"+random(1,5)+".ogg", false);
+}
+}
+if(key_down(KEY_RIGHT) and walktimer.elapsed>=walktime and me.x<100)
+{
+walktimer.restart();
+me.x++;
+player_facing=1;
+if(me.y == 0)
+{
+p.play_stationary("shortgrassstep"+random(1,5)+".ogg", false);
+}
+}
+if(key_pressed(KEY_ESCAPE))
+{
+reset();
+mainmenu();
+}
+if(key_pressed(KEY_C))
+{
+speak(me.x+" , "+me.y);
+}
+if(key_pressed(KEY_H))
+{
+speak(health+" health");
+}
+if(health <= 0)
+{
+reset();
+dlgplay("death.ogg", true, 30);
+mainmenu();
+}
+if(key_pressed(KEY_D) and debug == true)
+{
+health = 0;
+}
+if(key_pressed(KEY_F6))
+{
+if(debug == false)
+{
+debug = true;
+speak("Debug mode enabled!");
+p.play_stationary("don.ogg", false);
+}
+else
+{
+debug = false;
+speak("Debug mode disabled!");
+p.play_stationary("doff.ogg", false);
+}
+}
+if(key_pressed(KEY_SPACE) and jumping == false and landed == true)
+{
+landed = false;
+jumping = true;
+p.play_stationary("jump.ogg", false);
+jumptimer.force(jumptime);
+}
+if(jumptimer.elapsed>=jumptime and jumping == true and landed == false and me.y<5)
+{
+me.y+=1;
+jumptimer.restart();
+}
+if(me.y>=5)
+{
+jumping = false;
+}
+if(jumptimer.elapsed>=jumptime and jumping == false and landed == false and me.y>0)
+{
+me.y-=1;
+jumptimer.restart();
+if(me.y == 0)
+{
+p.play_stationary("shortgrassland.ogg", false);
+}
+}
+if(me.y==0 and landed==false)
+{
+landed=true;
+jumping=false;
+}
+if(key_down(KEY_LALT) or key_down(KEY_RALT))
+{
+if(jumping == true)
+{
+walktime = speedtime/2;
+}
+else
+{
+walktime = speedtime;
+}
+}
+if(key_up(KEY_LALT) and key_up(KEY_RALT))
+{
+walktime = 200;
+}
+}
+}
+void reset()
+{
+amb.stop();
+p.destroy_all();
+p2.destroy_all();
+enemies.resize(0);
+reset_weapons();
+me.x = 0;
+me.y = 0;
+health = 1000;
+player_facing=1;
+}

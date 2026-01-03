@@ -1,0 +1,12 @@
+name=pistol
+damage=25
+range=30
+firerate=400
+ammo=12
+maxammo=12
+reloadtime=1500
+automatic=false
+sound_fire=pistolfire.ogg
+sound_reload=ppistolreload.ogg
+sound_empty=pistolempty.ogg
+sound_hit=pistolhit.ogg

@@ -1,0 +1,188 @@
+weapon@[] weapons(0);
+int current_weapon=-1;
+int player_facing=1;
+class weapon
+{
+	string name;
+	int damage;
+	int range;
+	int firerate;
+	int ammo;
+	int maxammo;
+	int reloadtime;
+	bool automatic;
+	string sound_fire;
+	string sound_reload;
+	string sound_empty;
+	string sound_hit;
+	timer firetimer;
+	timer reloadtimer;
+	bool reloading;
+	weapon()
+	{
+		name="";
+		damage=0;
+		range=0;
+		firerate=500;
+		ammo=0;
+		maxammo=0;
+		reloadtime=1000;
+		automatic=false;
+		sound_fire="";
+		sound_reload="";
+		sound_empty="";
+		sound_hit="";
+		reloading=false;
+	}
+	bool load_from_file(string filename)
+	{
+		file f;
+		if(!f.open(filename,"r"))
+			return false;
+		string content=f.read();
+		f.close();
+		string[] lines=content.split("\n");
+		for(uint i=0; i <lines.length(); i++)
+		{
+			string line=lines[i].trim_whitespace();
+			if(line.length()==0)
+				continue;
+			int eq=line.find_first("=");
+			if(eq<0)
+				continue;
+			string key=line.substr(0,eq).trim_whitespace();
+			string value=line.substr(eq+1).trim_whitespace();
+			if(key=="name")
+				name=value;
+			else if(key=="damage")
+				damage=parse_int(value);
+			else if(key=="range")
+				range=parse_int(value);
+			else if(key=="firerate")
+				firerate=parse_int(value);
+			else if(key=="ammo")
+			{
+				ammo=parse_int(value);
+				if(maxammo==0)
+					maxammo=ammo;
+			}
+			else if(key=="maxammo")
+				maxammo=parse_int(value);
+			else if(key=="reloadtime")
+				reloadtime=parse_int(value);
+			else if(key=="automatic")
+				automatic=(value=="true" or value=="1");
+			else if(key=="sound_fire")
+				sound_fire=value;
+			else if(key=="sound_reload")
+				sound_reload=value;
+			else if(key=="sound_empty")
+				sound_empty=value;
+			else if(key=="sound_hit")
+				sound_hit=value;
+		}
+		return name!="";
+	}
+	bool fire(int player_x,int player_y,int facing)
+	{
+		if(reloading)
+			return false;
+		if(firetimer.elapsed<firerate)
+			return false;
+		if(ammo<=0)
+		{
+			if(sound_empty!="")
+				p.play_stationary(sound_empty,false);
+			firetimer.restart();
+			return false;
+		}
+		ammo--;
+		firetimer.restart();
+		if(sound_fire!="")
+			p.play_stationary(sound_fire,false);
+		for(uint i=0; i<enemies.length(); i++)
+		{
+			int dx=enemies[i].ex-player_x;
+			int dist=abs(dx);
+			bool in_direction=(facing>0 and dx>=0) or (facing<0 and dx<=0);
+			if(dist<=range and in_direction)
+			{
+				enemies[i].health-=damage;
+				if(enemies[i].health<0)
+					enemies[i].health=0;
+				if(sound_hit!="")
+					p2.play_2d(sound_hit,player_x,player_y,enemies[i].ex,enemies[i].ey,false);
+				return true;
+			}
+		}
+		return true;
+	}
+	void start_reload()
+	{
+		if(reloading || ammo>0 || ammo>=maxammo)
+			return;
+		reloading=true;
+		reloadtimer.restart();
+		if(sound_reload != "")
+			p.play_stationary(sound_reload,false);
+	}
+	void update()
+	{
+		if(reloading and reloadtimer.elapsed>=reloadtime)
+		{
+			ammo=maxammo;
+			reloading=false;
+		}
+	}
+}
+void load_weapons()
+{
+	weapons.resize(0);
+	current_weapon=-1;
+	string[]@ files=find_files("weapons/*.txt");
+	if(@files==null)
+		return;
+	for(uint i=0; i<files.length(); i++)
+	{
+		weapon w;
+		if(w.load_from_file("weapons/"+files[i]))
+			weapons.insert_last(w);
+	}
+	if(weapons.length()>0)
+		current_weapon=0;
+}
+void weapon_loop()
+{
+	if(current_weapon<0 or current_weapon>=int(weapons.length()))
+		return;
+	weapons[current_weapon].update();
+	if(weapons[current_weapon].automatic)
+	{
+		if(key_down(KEY_LCTRL) or key_down(KEY_RCTRL))
+			weapons[current_weapon].fire(int(me.x),int(me.y),player_facing);
+	}
+	else
+	{
+		if(key_pressed(KEY_LCTRL) or key_pressed(KEY_RCTRL))
+			weapons[current_weapon].fire(int(me.x),int(me.y),player_facing);
+	}
+	if(key_pressed(KEY_R))
+		weapons[current_weapon].start_reload();
+	if(key_pressed(KEY_TAB) and weapons.length()>1)
+	{
+		current_weapon++;
+		if(current_weapon>=int(weapons.length()))
+			current_weapon=0;
+		speak(weapons[current_weapon].name);
+	}
+	if(key_pressed(KEY_A))
+		speak(weapons[current_weapon].ammo+" of "+weapons[current_weapon].maxammo);
+}
+void reset_weapons()
+{
+	for(uint i=0; i<weapons.length(); i++)
+	{
+		weapons[i].ammo=weapons[i].maxammo;
+		weapons[i].reloading=false;
+	}
+}

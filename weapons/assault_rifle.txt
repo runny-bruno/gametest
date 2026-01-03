@@ -1,0 +1,12 @@
+name=assault_rifle
+damage=15
+range=50
+firerate=100
+ammo=30
+maxammo=30
+reloadtime=2000
+automatic=true
+sound_fire=riflefire.ogg
+sound_reload=rriflereload.ogg
+sound_empty=rrifleempty.ogg
+sound_hit=riflehit.ogg

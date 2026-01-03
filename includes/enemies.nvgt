@@ -1,0 +1,65 @@
+enemy@[] enemies(0);
+class enemy
+{
+int ex, ey;
+string name; //Name of the enemy
+int health, speed, damage, attacktime;
+int esound;
+timer ewtimer, dietimer, attacktimer, noisetimer;
+enemy(int ex, int ey, string name, int health, int speed, int damage, int attacktime)
+{
+this.ex = ex;
+this.ey = ey;
+this.name = name;
+this.health = health;
+this.speed = speed;
+this.damage = damage;
+this.attacktime = attacktime;
+}
+}
+
+void enemy_loop()
+{
+for(int i=0; i<enemies.length(); i++)
+{
+if(enemies[i].noisetimer.elapsed>=5000)
+{
+enemies[i].noisetimer.restart();
+enemies[i].esound = p2.play_2d(enemies[i].name+"noise"+random(1,5)+".ogg", me.x, me.y, enemies[i].ex, enemies[i].ey, false);
+}
+if(enemies[i].ewtimer.elapsed>=enemies[i].speed)
+{
+if(enemies[i].ex<me.x)
+{
+enemies[i].ex+=1;
+p2.play_2d("shortgrassstep"+random(1,5)+".ogg", me.x, me.y, enemies[i].ex, enemies[i].ey, false);
+enemies[i].ewtimer.restart();
+p2.update_sound_2d(enemies[i].esound, enemies[i].ex, enemies[i].ey);
+}
+if(enemies[i].ex>me.x)
+{
+enemies[i].ex-=1;
+p2.play_2d("shortgrassstep"+random(1,5)+".ogg", me.x, me.y, enemies[i].ex, enemies[i].ey, false);
+enemies[i].ewtimer.restart();
+p2.update_sound_2d(enemies[i].esound, enemies[i].ex, enemies[i].ey);
+}
+}
+if(abs(enemies[i].ex-me.x)<=3 and enemies[i].attacktimer.elapsed>=enemies[i].attacktime and debug == false and me.y == 0)
+{
+enemies[i].attacktimer.restart();
+p.play_stationary(enemies[i].name+"attack.ogg", false);
+health-=enemies[i].damage;
+}
+if(enemies[i].health==0)
+{
+p2.play_2d("kill.ogg", me.x, me.y, enemies[i].ex, enemies[i].ey, false);
+enemies.remove_at(i);
+return;
+}
+}
+}
+void spawn_enemy(int ex, int ey, string name, int health, int speed, int damage, int attacktime)
+{
+enemy e(ex, ey, name, health, speed, damage, attacktime);
+enemies.insert_last(e);
+}
